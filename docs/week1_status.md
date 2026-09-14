@@ -7,7 +7,7 @@ Status key: ✅ Complete &nbsp; 🟡 Partial/Temporary (mock) &nbsp; 🔴 Blocke
 
 | Deliverable | Owner | Status | Evidence | Blocker (if any) | Next action |
 |---|---|---|---|---|---|
-| GitHub repo + decisions.md + api_contract.md | Zainab | | | | |
+| GitHub repo + decisions.md + api_contract.md | Zainab | ✅ | | | |
 | Android project runs on emulator | Nada | | | | |
 | FastAPI starts, /docs reachable | Rana | | | | |
 | AI environment loads RoBERTa + tokenizer | Raseel | | | | |
