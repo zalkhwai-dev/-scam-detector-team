@@ -13,12 +13,15 @@ implemented this week. Raseel and Hawra own the final class definitions before d
 **Conflict identified:** Section 5.2 of the original report places storage on the phone; Sections 5.1 and 5.3
 describe the backend writing to the database.
 
-**Provisional decision for this foundation week:** on-device storage.
-- The backend computes and returns a result.
-- The Android app (via Zainab's storage layer) saves that result locally using SQLiteOpenHelper.
-- FastAPI does **not** write directly to the phone's database.
+** Confirmed decision: on-device storage.
 
-This conflict will be raised with the supervisor for a final decision in a later stage.
+The backend computes and returns a result.
+
+The Android app (via Zainab's storage layer) saves that result locally using SQLiteOpenHelper.
+
+FastAPI does not write directly to the phone's database.
+
+The team has confirmed this resolves the conflict between Sections 5.2 and 5.1/5.3 of the original report.
 
 ## 3. URL verdicts and risk scores
 - Google Safe Browsing returns **threat_match** or **no_known_threat** — not three ready-made verdict
