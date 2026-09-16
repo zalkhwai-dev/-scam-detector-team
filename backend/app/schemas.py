@@ -1,33 +1,42 @@
-from pydantic import BaseModel , Field , HttpUrl
-from typing import List,Optional
+from pydantic import BaseModel, Field, HttpUrl
+from typing import List, Optional
+
 
 class Response(BaseModel):
-    status:str
-    message:str
+    status: str
+    message: str
+
 
 class MessageRequest(BaseModel):
-    text:str = Field(
-      ...,
-    min_length=1, 
-    max_length=512,
-    description="Message text cannot be empty and must not exceed 512 characters."
+    text: str = Field(
+        ...,
+        min_length=1,
+        max_length=512,
+        description="Message text cannot be empty and must not exceed 512 characters."
     )
 
+
 class URLRequest(BaseModel):
-    url:HttpUrl =Field(
+    url: HttpUrl = Field(
         ...,
         description="Must be a valid and well-formed URL."
     )
 
+
+class Highlight(BaseModel):
+    start: int
+    end: int
+
+
 class AnalysisResult(BaseModel):
-    scan_type:str
-    status:str
-    verdict:Optional[str]= None
-    model_label:Optional[str] = None
-    model_score:Optional[float]=None
-    model_version:Optional[str]=None
+    scan_type: str
+    status: str
+    verdict: Optional[str] = None
+    model_label: Optional[str] = None
+    model_score: Optional[float] = None
+    model_version: Optional[str] = None
     is_mock: bool = True
-    url_status:Optional[str]=None
-    risk_score:Optional[float]=None
-    summary:Optional[str]=None
-    highlights:List[str]=[]
+    url_status: Optional[str] = None
+    risk_score: Optional[float] = None
+    summary: Optional[str] = None
+    highlights: List[Highlight] = []
