@@ -17,7 +17,7 @@ Status key: ✅ Complete &nbsp; 🟡 Partial/Temporary (mock) &nbsp; 🔴 Blocke
 | database_schema.sql | Amnah | | | | |
 | Android networking layer | Zainab | | | | |
 | On-device SQLite save/read | Zainab | | | | |
-| End-to-end request reaches backend + returns | Zainab, Nada, Rana | | | | |
+| End-to-end request reaches backend + returns | Zainab, Nada, Rana | 🟡 | 	Confirmed against Rana's real FastAPI code (main.py/schemas.py, run locally): /health returned correctly, analyze_message() returned verdict=scam, model_score=0.87, is_mock=true, and the result was saved to and read back from SQLite.| | |
 | Saved result survives app reopen | Zainab | | | | |
 | Invalid input handled without crash | Nada, Rana | | | | |
 | Service failure shows "unavailable", never defaults to Safe | Rana, Nada, Zainab | | | | |
