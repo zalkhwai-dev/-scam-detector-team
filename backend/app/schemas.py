@@ -37,6 +37,6 @@ class AnalysisResult(BaseModel):
     model_version: Optional[str] = None
     is_mock: bool = True
     url_status: Optional[str] = None
-    risk_score: Optional[float] = None
+    risk_score: Optional[int] = None
     summary: Optional[str] = None
     highlights: List[Highlight] = []
