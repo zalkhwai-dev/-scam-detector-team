@@ -9,6 +9,14 @@ Start with **binary classes: Safe and Scam** (matches scope Section 1.3 and the 
 report passages mention additional scam types (e.g. phishing, fraud) — flagged for supervisor review, not
 implemented this week. Raseel and Hawra own the final class definitions before data selection.
 
+#Note The AI team's delivered model (`backend/models/final`) uses **three classes** instead of the two agreed
+above: `ham` (0), `smishing` (1), `spam` (2) — not binary `safe`/`scam`.
+
+**Current status:** the backend's classification logic (`message_classifier.py`) treats any non-"ham"
+prediction as "Scam," combining smishing + spam probability into one score. This produces a correct
+Safe/Scam verdict for the app without further code changes — a working compatibility fix, not a
+retraining.
+
 ## 2. SQLite location
 **Conflict identified:** Section 5.2 of the original report places storage on the phone; Sections 5.1 and 5.3
 describe the backend writing to the database.
