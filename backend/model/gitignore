@@ -1,0 +1,16 @@
+# my data, don't want this in the repo (licensing + it's huge)
+*.csv
+*.jsonl
+
+# model folders (v2, v3, v3l, v3l2...), way too big for git
+# these live on HF hub instead, see README
+smishing-detector-v*/
+*.zip
+
+# python junk
+__pycache__/
+.venv/
+*.pyc
+
+# mac junk
+.DS_Store

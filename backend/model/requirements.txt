@@ -1,0 +1,8 @@
+transformers
+datasets
+evaluate
+accelerate
+torch
+pandas
+numpy
+huggingface_hub
