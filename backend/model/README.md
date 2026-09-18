@@ -67,7 +67,7 @@ shift.
 Not in this repo, too big for git (~453MB, git caps at 100MB per file).
 Grab them from the Releases page instead:
 
-**[Download smishing-detector-v3l2.zip](../../releases/tag/v3l2)** (find the `v3l2` release, download the zip attached to it)
+[Download smishing-detector-v3l2.zip](https://github.com/zalkhwai-dev/-scam-detector-team/releases/tag/v3l2)
 
 Unzip it, then point at the extracted `final` folder:
 
