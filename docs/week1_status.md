@@ -17,8 +17,7 @@ Status key: ✅ Complete &nbsp; 🟡 Partial/Temporary (mock) &nbsp; 🔴 Blocke
 | database_schema.sql | Amnah | 🔴 | | | |
 | Android networking layer | Zainab | ✅ | NetworkClient.kt built (HttpURLConnection, off main thread via coroutines). Tested against Rana's real FastAPI backend, run locally on the same Mac: analyzeMessage() call succeeded, returned verdict=scam, model_score=0.87, is_mock=true| | |
 | On-device SQLite save/read | Zainab |🟡 | | | |
-| End-to-end request reaches backend + returns | Zainab, Nada, Rana | 🟡 |
-Confirmed against Rana's real FastAPI code (main.py/schemas.py, run locally): /health returned correctly, analyze_message() returned verdict=scam, model_score=0.87, is_mock=true, and the result was saved to and read back from SQLite.| | |
+| End-to-end request reaches backend + returns | Zainab, Nada, Rana | 🟡 |Confirmed against Rana's real FastAPI code (main.py/schemas.py, run locally): /health returned correctly, analyze_message() returned verdict=scam, model_score=0.87, is_mock=true, and the result was saved to and read back from SQLite.| | |
 | Saved result survives app reopen | Zainab | ✅| Test app fully closed (swiped from recent apps) and reopened in the emulator; "Show Saved History" still listed previously saved scans| | |
 | Invalid input handled without crash | Nada, Rana, Zainab | 🟡 | Backend validation confirmed via curl: empty text, malformed URL, and over-512-char text all correctly return 422 with a clear field-level message, not a crash. App-side confirmed too: Zainab's test app caught the resulting ApiError and displayed the message on screen instead of crashing | Only tested in Zainab's own throwaway test app, not Nada's real UI | Repeat once Nada's real UI exists |
 | Service failure shows "unavailable", never defaults to Safe | Rana, Nada, Zainab | 🔴 | | | |
