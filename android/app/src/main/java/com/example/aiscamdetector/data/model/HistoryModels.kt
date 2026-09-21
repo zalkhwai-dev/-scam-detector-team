@@ -5,6 +5,7 @@ data class HistoryEntry(
     val type: ScanType,
     val input: String,
     val verdict: Verdict,
-    val riskScorePercent: Double?,     // was: Double
+    val riskScorePercent: Double?,
+    val summary: String,
     val timestamp: String
 )

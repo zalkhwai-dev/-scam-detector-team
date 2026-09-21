@@ -13,11 +13,6 @@ import java.util.Locale
 /**
  * Real implementation of Nada's HistoryRepository interface, replacing
  * FixtureHistoryRepository. Reads from Zainab's on-device SQLite storage.
- *
- * NOTE: requires ScanHistoryDbHelper's readHistory() to also return url_status
- * per scan (see the ScanHistoryDbHelper.kt update alongside this file) -
- * without it, URL scans in history always show as UNKNOWN verdict, since
- * `verdict` in the database is only ever set for messages, never URLs.
  */
 class RealHistoryRepository(context: Context) : HistoryRepository {
 
@@ -49,12 +44,15 @@ class RealHistoryRepository(context: Context) : HistoryRepository {
             type = type,
             input = inputText,
             verdict = verdictEnum,
-            // Double? per Nada's fix - real null when no real score exists,
-            // never a faked 0.0 (see docs/decisions.md on not inventing risk_score).
             riskScorePercent = when {
                 modelScore != null -> modelScore * 100
                 riskScore != null -> riskScore.toDouble()
                 else -> null
+            },
+            summary = summary ?: if (scanType == "url" && riskScore == null) {
+                "No numeric risk score available yet - result is based on a known-threat check only."
+            } else {
+                "No summary provided."
             },
             timestamp = dateFormat.format(Date(createdAt))
         )

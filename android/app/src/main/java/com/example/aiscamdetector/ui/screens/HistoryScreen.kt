@@ -1,5 +1,6 @@
 package com.example.aiscamdetector.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,9 +16,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,9 +33,13 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import com.example.aiscamdetector.data.model.HistoryEntry
 import com.example.aiscamdetector.data.model.ScanType
@@ -46,6 +54,14 @@ import com.example.aiscamdetector.ui.viewmodel.HistoryViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(viewModel: HistoryViewModel, onBack: () -> Unit) {
+    var selectedEntry by remember { mutableStateOf<HistoryEntry?>(null) }
+
+    val entry = selectedEntry
+    if (entry != null) {
+        ScanDetailsScreen(entry = entry, onClose = { selectedEntry = null })
+        return
+    }
+
     val state by viewModel.state.collectAsState()
 
     Scaffold(
@@ -93,7 +109,9 @@ fun HistoryScreen(viewModel: HistoryViewModel, onBack: () -> Unit) {
                             contentPadding = PaddingValues(16.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(s.entries) { entry -> HistoryRow(entry) }
+                            items(s.entries) { entry ->
+                                HistoryRow(entry, onClick = { selectedEntry = entry })
+                            }
                         }
                     }
                 }
@@ -103,13 +121,16 @@ fun HistoryScreen(viewModel: HistoryViewModel, onBack: () -> Unit) {
 }
 
 @Composable
-private fun HistoryRow(entry: HistoryEntry) {
+private fun HistoryRow(entry: HistoryEntry, onClick: () -> Unit) {
     val color = when (entry.verdict) {
         Verdict.SAFE -> SafeGreen
         Verdict.SCAM -> ScamRed
         Verdict.UNKNOWN -> UnknownAmber
     }
-    Card(shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()) {
+    Card(
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)
+    ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -124,7 +145,6 @@ private fun HistoryRow(entry: HistoryEntry) {
             Spacer(Modifier.height(4.dp))
             Text(text = entry.input, maxLines = 2, style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(8.dp))
-
             val verdictLabel = entry.verdict.name.lowercase().replaceFirstChar { it.uppercase() }
             val scoreLabel = entry.riskScorePercent?.let { "${it}%" } ?: "not yet scored"
             Text(
@@ -132,6 +152,75 @@ private fun HistoryRow(entry: HistoryEntry) {
                 color = color,
                 style = MaterialTheme.typography.labelLarge
             )
+        }
+    }
+}
+
+/**
+ * Full-screen scan detail view, shown when a HistoryRow is tapped.
+ * Mirrors ResultCard's layout/colors so a fresh scan and a past scan
+ * look consistent.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ScanDetailsScreen(entry: HistoryEntry, onClose: () -> Unit) {
+    val color = when (entry.verdict) {
+        Verdict.SAFE -> SafeGreen
+        Verdict.SCAM -> ScamRed
+        Verdict.UNKNOWN -> UnknownAmber
+    }
+    val verdictLabel = entry.verdict.name.lowercase().replaceFirstChar { it.uppercase() }
+    val scoreText = entry.riskScorePercent?.let { "Risk score: ${it}%" } ?: "Risk score: not yet available"
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Scan Details") },
+                navigationIcon = {
+                    IconButton(onClick = onClose) {
+                        Icon(Icons.Default.Close, contentDescription = "Close")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = NavyPrimary,
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White
+                )
+            )
+        }
+    ) { padding ->
+        Column(modifier = Modifier.padding(padding).padding(16.dp).fillMaxSize()) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text(
+                        text = if (entry.type == ScanType.URL) "URL Scan" else "Message Scan",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = Color.Gray
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(text = verdictLabel, style = MaterialTheme.typography.titleLarge, color = color)
+                    Spacer(Modifier.height(8.dp))
+                    Text(text = scoreText, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                    Divider(modifier = Modifier.padding(vertical = 12.dp))
+                    Text(
+                        text = entry.input,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontStyle = FontStyle.Italic
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Text(text = entry.summary, style = MaterialTheme.typography.bodyLarge)
+                    Spacer(Modifier.height(20.dp))
+                    Text(
+                        text = entry.timestamp,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
+                }
+            }
         }
     }
 }
