@@ -14,7 +14,7 @@ Status key: ✅ Complete &nbsp; 🟡 Partial/Temporary (mock) &nbsp; 🔴 Blocke
 | Dataset selected + documented | Hawra | ✅ | | | |
 | /api/v1/analyze-message (mock) | Rana |✅ | Endpoint live, tested directly by Zainab (see below) | 	| |
 | /api/v1/check-url (mock or real Google call) | Amnah | 🟡 | Endpoint live (mock, is_mock=true), tested directly by Zainab (see below). Real Google Safe Browsing call still pending Amnah| Real Google check not yet implemented | Waiting on Amnah for real URL logic |
-| database_schema.sql | Amnah | 🔴 | | | Reconcile with Zainab's provisional schema once delivered|
+| database_schema.sql | Amnah | 🔴 | |Reconcile with Zainab's provisional schema once delivered | |
 | Android networking layer | Zainab | ✅ | NetworkClient.kt built (HttpURLConnection, off main thread via coroutines). Tested against Rana's real FastAPI backend, run locally on the same Mac: analyzeMessage() call succeeded, returned verdict=scam, model_score=0.87, is_mock=true| | |
 | On-device SQLite save/read | Zainab |	✅ | ScanHistoryDbHelper.kt built (SQLiteOpenHelper, saveResult()/readHistory()). Verified: result from the mock scan was saved, then read back correctly via "Show Saved History"| | Reconcile schema with Amnah's real database_schema.sql once delivered|
 | End-to-end request reaches backend + returns | Zainab, Nada, Rana | ✅ |Confirmed inside Nada's real AIScamDetector app (not a throwaway test project): submitted "You won a free prize, click here now!" through the real Scan Message screen, got back a correct Scam verdict with 87.0% risk score, matching Rana's real backend response| | |
