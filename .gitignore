@@ -1,0 +1,18 @@
+# Android build output
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+*.iml
+.idea/
+
+# Python
+backend/**/__pycache__/
+backend/**/venv/
+*.pyc
+
+# macOS
+.DS_Store
+
+# Large model files - shared via README download link instead
+backend/model/final/

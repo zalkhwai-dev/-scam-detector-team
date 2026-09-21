@@ -1,11 +1,23 @@
-package com.example.integrationtest.integration
+package com.example.aiscamdetector.integration
+
 import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import org.json.JSONArray
 
-
+/**
+ * On-device SQLite storage (Zainab's Day 1 task #3), per the provisional
+ * decision in docs/decisions.md: the backend returns a result, and the
+ * Android app saves it here. FastAPI never writes to this database.
+ *
+ * PROVISIONAL SCHEMA: Amnah's database_schema.sql (User, Scan, Result,
+ * AI Model Log, URL Check entities from Section 5.5) had not been delivered
+ * yet when this was written. This single-table schema stores exactly the
+ * fields the agreed API contract returns, so it can be built and tested
+ * immediately. Once Amnah's schema is ready, reconcile field names/tables
+ * with her and update this file together - do not diverge silently.
+ */
 class ScanHistoryDbHelper(context: Context) :
     SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
@@ -74,6 +86,8 @@ class ScanHistoryDbHelper(context: Context) :
                         status = it.getString(it.getColumnIndexOrThrow(COL_STATUS)),
                         verdict = it.getStringOrNull(COL_VERDICT),
                         isMock = it.getInt(it.getColumnIndexOrThrow(COL_IS_MOCK)) == 1,
+                        urlStatus = it.getStringOrNull(COL_URL_STATUS),
+                        modelScore = it.getDoubleOrNull(COL_MODEL_SCORE),
                         riskScore = it.getIntOrNull(COL_RISK_SCORE),
                         summary = it.getStringOrNull(COL_SUMMARY),
                         createdAt = it.getLong(it.getColumnIndexOrThrow(COL_CREATED_AT))
@@ -100,6 +114,11 @@ class ScanHistoryDbHelper(context: Context) :
     private fun android.database.Cursor.getIntOrNull(col: String): Int? {
         val i = getColumnIndexOrThrow(col)
         return if (isNull(i)) null else getInt(i)
+    }
+
+    private fun android.database.Cursor.getDoubleOrNull(col: String): Double? {
+        val i = getColumnIndexOrThrow(col)
+        return if (isNull(i)) null else getDouble(i)
     }
 
     companion object {
@@ -132,6 +151,8 @@ data class ScanHistoryRow(
     val status: String,
     val verdict: String?,
     val isMock: Boolean,
+    val urlStatus: String?,
+    val modelScore: Double?,
     val riskScore: Int?,
     val summary: String?,
     val createdAt: Long

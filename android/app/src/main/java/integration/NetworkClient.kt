@@ -1,4 +1,4 @@
-package com.example.integrationtest.integration
+package com.example.aiscamdetector.integration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray

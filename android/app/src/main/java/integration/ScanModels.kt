@@ -1,4 +1,4 @@
-package com.example.integrationtest.integration
+package com.example.aiscamdetector.integration
 
 
 data class Highlight(
