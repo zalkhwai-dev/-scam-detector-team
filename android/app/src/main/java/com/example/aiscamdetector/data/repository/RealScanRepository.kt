@@ -93,12 +93,28 @@ class RealScanRepository(context: Context) : ScanRepository {
             null
         } ?: "No summary provided."
 
+        // For a URL scan, the input itself is the detected URL. For a message
+        // scan, no field in the contract carries this - the backend doesn't
+        // extract URLs from message text - so we look for one directly in
+        // what the user typed, the same simple pattern Nada's UrlFoundCard
+        // expects to receive. If none is found, detectedUrl stays null and
+        // UrlFoundCard correctly doesn't show.
+        val detectedUrl = when (response.scan_type) {
+            "url" -> inputText
+            "message" -> urlPattern.find(inputText)?.value
+            else -> null
+        }
+
         return ScanResult(
             verdict = verdict,
             riskScorePercent = riskScorePercent,
             summary = summary,
             suspiciousPhrases = suspiciousPhrases,
-            detectedUrl = if (response.scan_type == "url") inputText else null
+            detectedUrl = detectedUrl
         )
+    }
+
+    companion object {
+        private val urlPattern = Regex("""https?://\S+""")
     }
 }
