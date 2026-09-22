@@ -20,8 +20,10 @@ class RealScanRepository(context: Context) : ScanRepository {
 
     override suspend fun scanMessage(message: String): Result<ScanResult> {
         return try {
+            val startTime = System.currentTimeMillis()
             val response = NetworkClient.analyzeMessage(message)
-            dbHelper.saveResult(message, response)
+            val elapsedMs = (System.currentTimeMillis() - startTime).toDouble()
+            dbHelper.saveResult(message, response, elapsedMs)
             Result.success(toScanResult(response, inputText = message))
         } catch (e: ApiError) {
             Result.failure(e)
@@ -32,8 +34,10 @@ class RealScanRepository(context: Context) : ScanRepository {
 
     override suspend fun scanUrl(url: String): Result<ScanResult> {
         return try {
+            val startTime = System.currentTimeMillis()
             val response = NetworkClient.checkUrl(url)
-            dbHelper.saveResult(url, response)
+            val elapsedMs = (System.currentTimeMillis() - startTime).toDouble()
+            dbHelper.saveResult(url, response, elapsedMs)
             Result.success(toScanResult(response, inputText = url))
         } catch (e: ApiError) {
             Result.failure(e)
