@@ -1,3 +1,90 @@
+<<<<<<< HEAD
+from fastapi import FastAPI, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+# Import database session, models, and initialization function
+from database.models import SessionLocal, Scan, URLCheck, init_db
+from services.url_service import check_url_safety as check_url
+
+# Initialize FastAPI app
+app = FastAPI(
+    title="Scam Detector API",
+    description="API for detecting scam URLs and text threats",
+    version="1.0"
+)
+
+# Automatically create database tables when the application starts
+@app.on_event("startup")
+def startup_event():
+    init_db()
+
+# Dependency to get database session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# Pydantic model for request body validation
+class URLRequest(BaseModel):
+    url: str
+    user_id: int = None
+
+@app.post("/api/scan/url")
+def scan_and_save_url(request: URLRequest, db: Session = Depends(get_db)):
+    """
+    Endpoint to receive a URL, scan it via Google Safe Browsing service,
+    and persist the results in the SQLite database.
+    """
+    try:
+        # 1. Call the URL safety check service
+        service_result = check_url(request.url)
+        
+        url_status = service_result.get("url_status", "unknown")
+        
+        # 2. Determine verdict based on status
+        verdict = "Safe" if url_status == "no_known_threat" else "Suspicious/Threat"
+        
+        # 3. Create and save scan record
+        new_scan = Scan(
+            user_id=request.user_id,
+            input_type="url",
+            input_text=request.url,
+            verdict=verdict
+        )
+        db.add(new_scan)
+        db.commit()
+        db.refresh(new_scan)
+        
+        # 4. Create and save URL check details record
+        new_url_check = URLCheck(
+            scan_id=new_scan.id,
+            target_url=request.url,
+            url_status=url_status,
+            is_mock=service_result.get("is_mock", True)
+        )
+        db.add(new_url_check)
+        db.commit()
+        
+        return {
+            "success": True,
+            "scan_id": new_scan.id,
+            "url": request.url,
+            "verdict": verdict,
+            "url_status": url_status,
+            "is_mock": service_result.get("is_mock", True)
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True) 
+=======
 from fastapi import FastAPI,Request,status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -80,3 +167,4 @@ async def validation_exception_handler(request :Request ,exc:RequestValidationEr
        )
 
 
+>>>>>>> e597fdf5fa716b8869188570cca01b765da23b50
