@@ -1,17 +1,26 @@
-<<<<<<< HEAD
-from fastapi import FastAPI, Depends, HTTPException
-from pydantic import BaseModel
+from fastapi import FastAPI,Request,status, Depends, HTTPException
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 
 # Import database session, models, and initialization function
 from database.models import SessionLocal, Scan, URLCheck, init_db
 from services.url_service import check_url_safety as check_url
 
-# Initialize FastAPI app
-app = FastAPI(
-    title="Scam Detector API",
-    description="API for detecting scam URLs and text threats",
-    version="1.0"
+from app.schemas import (
+    Response,
+    MessageRequest,
+    URLRequest,
+    AnalysisResult,
+)
+
+#Project Information
+app = FastAPI(  
+    title="AI-Based Scam Message and Suspicious Link Detection System",
+    version ="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
 )
 
 # Automatically create database tables when the application starts
@@ -27,10 +36,48 @@ def get_db():
     finally:
         db.close()
 
-# Pydantic model for request body validation
-class URLRequest(BaseModel):
-    url: str
-    user_id: int = None
+
+@app.get("/health",response_model= Response ,tags=["Health"])
+def health_check():     #to verify backend service availability.
+    return Response(
+    status="running",
+    message="Backend service is running"
+  )
+
+@app.post("/api/v1/analyze-message" , response_model=AnalysisResult, tags=["Analysis"])
+def analyze_message(payload:MessageRequest):
+    return AnalysisResult(
+        scan_type= "message",
+         status="completed",
+         verdict="scam",
+         model_label="scam",
+         model_score=0.87,
+         model_version= None,
+         is_mock=True,
+         url_status=None,
+         risk_score=None,
+         summary=None,
+         highlights=[]
+   )
+
+
+
+
+@app.post("/api/v1/check-url",response_model=AnalysisResult, tags=["Analysis"])
+def check_url(payload:URLRequest):
+  return AnalysisResult(
+     scan_type= "url",
+              status="completed",
+              verdict=None,
+              model_label=None,
+              model_score=None,
+              model_version= None,
+              is_mock=True,
+              url_status="no_known_threat",
+              risk_score=None,
+              summary=None,
+              highlights=[]
+  )
 
 @app.post("/api/scan/url")
 def scan_and_save_url(request: URLRequest, db: Session = Depends(get_db)):
@@ -81,71 +128,6 @@ def scan_and_save_url(request: URLRequest, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True) 
-=======
-from fastapi import FastAPI,Request,status
-from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
-from app.schemas import (
-    Response,
-    MessageRequest,
-    URLRequest,
-    AnalysisResult,
-)
-
-#Project Information
-app = FastAPI(  
-    title="AI-Based Scam Message and Suspicious Link Detection System",
-    version ="1.0.0",
-    docs_url="/docs",
-    redoc_url="/redoc"
-)
-
-@app.get("/health",response_model= Response ,tags=["Health"])
-def health_check():     #to verify backend service availability.
-    return Response(
-    status="running",
-    message="Backend service is running"
-  )
-
-@app.post("/api/v1/analyze-message" , response_model=AnalysisResult, tags=["Analysis"])
-def analyze_message(payload:MessageRequest):
-    return AnalysisResult(
-        scan_type= "message",
-         status="completed",
-         verdict="scam",
-         model_label="scam",
-         model_score=0.87,
-         model_version= None,
-         is_mock=True,
-         url_status=None,
-         risk_score=None,
-         summary=None,
-         highlights=[]
-   )
-
-
-
-
-
-@app.post("/api/v1/check-url",response_model=AnalysisResult, tags=["Analysis"])
-def check_url(payload:URLRequest):
-  return AnalysisResult(
-     scan_type= "url",
-              status="completed",
-              verdict=None,
-              model_label=None,
-              model_score=None,
-              model_version= None,
-              is_mock=True,
-              url_status="no_known_threat",
-              risk_score=None,
-              summary=None,
-              highlights=[]
-  )
-
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request :Request ,exc:RequestValidationError):
      error =[]
@@ -166,5 +148,6 @@ async def validation_exception_handler(request :Request ,exc:RequestValidationEr
           }
        )
 
-
->>>>>>> e597fdf5fa716b8869188570cca01b765da23b50
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True) 
