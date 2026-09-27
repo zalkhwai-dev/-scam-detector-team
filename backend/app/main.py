@@ -8,6 +8,8 @@ from pydantic import BaseModel
 from database.models import SessionLocal, Scan, URLCheck, init_db
 from services.url_service import check_url_safety as check_url
 
+from app.services.Ai import predict
+
 from app.schemas import (
     Response,
     MessageRequest,
@@ -46,19 +48,7 @@ def health_check():     #to verify backend service availability.
 
 @app.post("/api/v1/analyze-message" , response_model=AnalysisResult, tags=["Analysis"])
 def analyze_message(payload:MessageRequest):
-    return AnalysisResult(
-        scan_type= "message",
-         status="completed",
-         verdict="scam",
-         model_label="scam",
-         model_score=0.87,
-         model_version= None,
-         is_mock=True,
-         url_status=None,
-         risk_score=None,
-         summary=None,
-         highlights=[]
-   )
+    return predict(payload.text)
 
 
 
