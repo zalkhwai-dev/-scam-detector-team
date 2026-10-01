@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
-from services.url_service import check_url_safety
+from app.services.url_service import check_url_safety
 
 from app.services.Ai import predict
 
