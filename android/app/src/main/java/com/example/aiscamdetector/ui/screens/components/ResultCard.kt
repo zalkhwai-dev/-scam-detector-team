@@ -64,6 +64,24 @@ fun ResultCard(result: ScanResult, modifier: Modifier = Modifier) {
             )
             Divider(modifier = Modifier.padding(vertical = 12.dp))
             Text(text = result.summary, style = MaterialTheme.typography.bodyLarge)
+
+            if (result.suspiciousPhrases.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Suspicious phrases found:",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Color.Gray
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                result.suspiciousPhrases.forEach { phrase ->
+                    Text(
+                        text = "• $phrase",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = ScamRed,
+                        modifier = Modifier.padding(vertical = 2.dp)
+                    )
+                }
+            }
         }
     }
 }

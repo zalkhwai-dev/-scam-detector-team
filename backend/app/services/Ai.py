@@ -1,7 +1,8 @@
 import os
+import re
 from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipeline
 
-from app.schemas import AnalysisResult
+from app.schemas import AnalysisResult, Highlight
 
 # Path to the real fine-tuned model delivered by the AI team (Raseel/Hawra):
 # backend/app/services/Ai.py -> backend/app -> backend -> backend/model/final
@@ -23,6 +24,46 @@ _classifier = pipeline(
     max_length=512,
     top_k=None,  # return scores for all 3 labels, not just the top one
 )
+
+# Common scam-indicator phrases, checked case-insensitively against the message text
+_SUSPICIOUS_PATTERNS = [
+    r"\burgent\b",
+    r"\bverify (?:now|your account|immediately)\b",
+    r"\bclick here\b",
+    r"\bact now\b",
+    r"\blimited time\b",
+    r"\bcongratulations\b",
+    r"\byou'?ve won\b",
+    r"\bclaim your\b",
+    r"\bsend (?:your )?(?:bank|card|account) details\b",
+    r"\bbank details\b",
+    r"\bsuspend(?:ed)? your account\b",
+    r"\baccount (?:has been )?locked\b",
+    r"\bconfirm your (?:identity|password|account)\b",
+    r"bit\.ly/\S+",
+    r"\bfree\b",
+    r"\bprize\b",
+    r"\blottery\b",
+    r"\bwinner\b",
+]
+
+
+def find_highlights(text: str):
+    """Finds suspicious phrases in the text and returns their positions as Highlight objects, merging any overlaps."""
+    matches = []
+    for pattern in _SUSPICIOUS_PATTERNS:
+        for m in re.finditer(pattern, text, flags=re.IGNORECASE):
+            matches.append((m.start(), m.end()))
+    matches.sort()
+
+    merged = []
+    for start, end in matches:
+        if merged and start <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], end))
+        else:
+            merged.append((start, end))
+
+    return [Highlight(start=s, end=e) for s, e in merged]
 
 
 def predict(text: str) -> AnalysisResult:
@@ -65,5 +106,5 @@ def predict(text: str) -> AnalysisResult:
         url_status=None,
         risk_score=None,
         summary=summary,
-        highlights=[]
+        highlights=find_highlights(text) if is_scam else []
     )

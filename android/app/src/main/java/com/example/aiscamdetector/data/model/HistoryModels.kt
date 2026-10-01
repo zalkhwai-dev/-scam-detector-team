@@ -7,5 +7,6 @@ data class HistoryEntry(
     val verdict: Verdict,
     val riskScorePercent: Double?,
     val summary: String,
+    val suspiciousPhrases: List<String> = emptyList(),
     val timestamp: String
 )

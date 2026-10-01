@@ -54,6 +54,7 @@ class RealHistoryRepository(context: Context) : HistoryRepository {
             } else {
                 "No summary provided."
             },
+            suspiciousPhrases = suspiciousPhrases,
             timestamp = dateFormat.format(Date(createdAt))
         )
     }

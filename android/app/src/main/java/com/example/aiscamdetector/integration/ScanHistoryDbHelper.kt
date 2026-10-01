@@ -27,6 +27,15 @@ import android.database.sqlite.SQLiteOpenHelper
  * flexibility. Semantically, these tables represent the evidence that
  * produces the one Result each scan has, so nesting them under Result fits.
  *
+ * DATABASE_VERSION 4: added results.highlighted_phrases, so scam message
+ * scans can store the specific suspicious phrases the AI service flagged
+ * (backend/app/services/Ai.py's find_highlights), not just the verdict and
+ * score. This is Zainab's own local table - not part of Amnah's backend
+ * schema - so no team coordination was needed for this addition. Stored as
+ * a single TEXT column with phrases joined by "|||" (SQLite has no native
+ * array/list column type, and a dedicated phrases table would be overkill
+ * for a handful of short strings per scan).
+ *
  * This file's public functions (saveResult, readHistory) keep their shape
  * as close to the original as possible so RealScanRepository.kt only needed
  * one small addition (passing measured processingTimeMs in), not a rewrite.
@@ -71,6 +80,7 @@ class ScanHistoryDbHelper(context: Context) :
                 $COL_VERDICT TEXT,
                 $COL_RISK_SCORE REAL,
                 $COL_SUMMARY TEXT,
+                $COL_HIGHLIGHTS TEXT,
                 FOREIGN KEY ($COL_RESULT_SCAN_ID) REFERENCES $TABLE_SCANS($COL_SCAN_ID)
             )
             """.trimIndent()
@@ -120,6 +130,11 @@ class ScanHistoryDbHelper(context: Context) :
      * the actual NetworkClient request/response round trip) since neither
      * the AI model nor the backend currently reports this themselves. Pass
      * null if not measured.
+     *
+     * Suspicious phrases are resolved here from response.highlights (start/
+     * end character positions) against inputText, the same way
+     * RealScanRepository does for the on-screen result, so both a fresh
+     * scan and its saved History entry show the identical phrases.
      */
     fun saveResult(inputText: String, response: ScanResponse, processingTimeMs: Double? = null): Long {
         val db = writableDatabase
@@ -132,11 +147,20 @@ class ScanHistoryDbHelper(context: Context) :
             }
             val scanId = db.insert(TABLE_SCANS, null, scanValues)
 
+            val suspiciousPhrases = response.highlights.mapNotNull { h ->
+                if (h.start in inputText.indices && h.end in (h.start + 1)..inputText.length) {
+                    inputText.substring(h.start, h.end)
+                } else null
+            }
+
             val resultValues = ContentValues().apply {
                 put(COL_RESULT_SCAN_ID, scanId)
                 put(COL_VERDICT, response.verdict)
                 response.risk_score?.let { put(COL_RISK_SCORE, it.toDouble()) }
                 put(COL_SUMMARY, response.summary)
+                if (suspiciousPhrases.isNotEmpty()) {
+                    put(COL_HIGHLIGHTS, suspiciousPhrases.joinToString(PHRASE_DELIMITER))
+                }
             }
             val resultId = db.insert(TABLE_RESULTS, null, resultValues)
 
@@ -178,6 +202,7 @@ class ScanHistoryDbHelper(context: Context) :
                 r.$COL_VERDICT AS verdict,
                 r.$COL_RISK_SCORE AS risk_score,
                 r.$COL_SUMMARY AS summary,
+                r.$COL_HIGHLIGHTS AS highlighted_phrases,
                 a.$COL_MODEL_SCORE AS model_score,
                 a.$COL_IS_MOCK AS is_mock,
                 a.$COL_PROCESSING_TIME_MS AS processing_time_ms,
@@ -192,6 +217,7 @@ class ScanHistoryDbHelper(context: Context) :
         val cursor = readableDatabase.rawQuery(query, null)
         cursor.use {
             while (it.moveToNext()) {
+                val rawPhrases = it.getStringOrNull("highlighted_phrases")
                 rows.add(
                     ScanHistoryRow(
                         id = it.getLong(it.getColumnIndexOrThrow("scan_id")),
@@ -205,6 +231,11 @@ class ScanHistoryDbHelper(context: Context) :
                         riskScore = it.getDoubleOrNull("risk_score"),
                         processingTimeMs = it.getDoubleOrNull("processing_time_ms"),
                         summary = it.getStringOrNull("summary"),
+                        suspiciousPhrases = if (rawPhrases.isNullOrEmpty()) {
+                            emptyList()
+                        } else {
+                            rawPhrases.split(PHRASE_DELIMITER)
+                        },
                         createdAt = it.getLong(it.getColumnIndexOrThrow("scan_timestamp"))
                     )
                 )
@@ -230,7 +261,8 @@ class ScanHistoryDbHelper(context: Context) :
 
     companion object {
         private const val DATABASE_NAME = "scan_history.db"
-        private const val DATABASE_VERSION = 3
+        private const val DATABASE_VERSION = 4
+        private const val PHRASE_DELIMITER = "|||"
 
         const val TABLE_USERS = "users"
         const val COL_USER_ID = "id"
@@ -252,6 +284,7 @@ class ScanHistoryDbHelper(context: Context) :
         const val COL_VERDICT = "verdict"
         const val COL_RISK_SCORE = "risk_score"
         const val COL_SUMMARY = "summary"
+        const val COL_HIGHLIGHTS = "highlighted_phrases"
 
         const val TABLE_AI_MODEL_LOGS = "ai_model_logs"
         const val COL_LOG_ID = "id"
@@ -283,5 +316,6 @@ data class ScanHistoryRow(
     val riskScore: Double?,
     val processingTimeMs: Double?,
     val summary: String?,
+    val suspiciousPhrases: List<String> = emptyList(),
     val createdAt: Long
 )

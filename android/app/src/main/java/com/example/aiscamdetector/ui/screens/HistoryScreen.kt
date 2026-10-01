@@ -159,7 +159,7 @@ private fun HistoryRow(entry: HistoryEntry, onClick: () -> Unit) {
 /**
  * Full-screen scan detail view, shown when a HistoryRow is tapped.
  * Mirrors ResultCard's layout/colors so a fresh scan and a past scan
- * look consistent.
+ * look consistent, including the suspicious-phrases list when present.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -213,6 +213,25 @@ private fun ScanDetailsScreen(entry: HistoryEntry, onClose: () -> Unit) {
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(text = entry.summary, style = MaterialTheme.typography.bodyLarge)
+
+                    if (entry.suspiciousPhrases.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = "Suspicious phrases found:",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        entry.suspiciousPhrases.forEach { phrase ->
+                            Text(
+                                text = "• $phrase",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = ScamRed,
+                                modifier = Modifier.padding(vertical = 2.dp)
+                            )
+                        }
+                    }
+
                     Spacer(Modifier.height(20.dp))
                     Text(
                         text = entry.timestamp,
