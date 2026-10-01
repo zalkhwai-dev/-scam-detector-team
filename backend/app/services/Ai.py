@@ -1,10 +1,58 @@
-import random
+import os
+from transformers import AutoModelForSequenceClassification, AutoTokenizer, pipeline
+
 from app.schemas import AnalysisResult
 
+# Path to the real fine-tuned model delivered by the AI team (Raseel/Hawra):
+# backend/app/services/Ai.py -> backend/app -> backend -> backend/model/final
+_MODEL_DIR = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "model",
+    "final",
+)
+
+# Loaded once when the server starts, not on every request.
+_tokenizer = AutoTokenizer.from_pretrained(_MODEL_DIR)
+_model = AutoModelForSequenceClassification.from_pretrained(_MODEL_DIR)
+
+_classifier = pipeline(
+    "text-classification",
+    model=_model,
+    tokenizer=_tokenizer,
+    truncation=True,
+    max_length=512,
+    top_k=None,  # return scores for all 3 labels, not just the top one
+)
+
+
 def predict(text: str) -> AnalysisResult:
-    is_scam = "http" in text.lower() or "bit.ly" in text.lower() or len(text) > 100
+    raw_result = _classifier(text)
+
+    # Depending on the transformers version, a single input can come back
+    # either as a flat list of label scores, or nested one level deeper.
+    if isinstance(raw_result[0], list):
+        label_scores = raw_result[0]
+    else:
+        label_scores = raw_result
+
+    scores_by_label = {item["label"]: item["score"] for item in label_scores}
+    ham_score = scores_by_label.get("ham", 0.0)
+    smishing_score = scores_by_label.get("smishing", 0.0)
+    spam_score = scores_by_label.get("spam", 0.0)
+
+    # The model has 3 classes (ham/smishing/spam), but the team agreed on a
+    # binary Safe/Scam result, so smishing + spam are combined into one
+    # "scam" score, per docs/decisions.md.
+    scam_score = smishing_score + spam_score
+
+    is_scam = scam_score > ham_score
     verdict_val = "scam" if is_scam else "safe"
-    score_val = round(random.uniform(0.75, 0.98), 2) if is_scam else round(random.uniform(0.01, 0.20), 2)
+    score_val = round(scam_score if is_scam else ham_score, 4)
+
+    if is_scam:
+        summary = "The model detected language patterns consistent with smishing or spam."
+    else:
+        summary = "No obvious scam patterns detected by the model."
 
     return AnalysisResult(
         scan_type="message",
@@ -12,10 +60,10 @@ def predict(text: str) -> AnalysisResult:
         verdict=verdict_val,
         model_label=verdict_val,
         model_score=score_val,
-        model_version=None,
-        is_mock=True,
+        model_version="smishing-detector-v3l2",
+        is_mock=False,
         url_status=None,
         risk_score=None,
-        summary="Suspicious pattern or link detected in message." if is_scam else "No obvious scam patterns detected.",
+        summary=summary,
         highlights=[]
     )
