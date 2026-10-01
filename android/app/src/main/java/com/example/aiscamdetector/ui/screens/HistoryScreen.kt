@@ -146,7 +146,9 @@ private fun HistoryRow(entry: HistoryEntry, onClick: () -> Unit) {
             Text(text = entry.input, maxLines = 2, style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(8.dp))
             val verdictLabel = entry.verdict.name.lowercase().replaceFirstChar { it.uppercase() }
-            val scoreLabel = entry.riskScorePercent?.let { "${it}%" } ?: "not yet scored"
+            // "%.1f" rounds the raw Double to one clean decimal place instead of
+            // exposing floating-point tails like 74.00999999999999.
+            val scoreLabel = entry.riskScorePercent?.let { "${"%.1f".format(it)}%" } ?: "not yet scored"
             Text(
                 text = "$verdictLabel - $scoreLabel",
                 color = color,
@@ -170,7 +172,10 @@ private fun ScanDetailsScreen(entry: HistoryEntry, onClose: () -> Unit) {
         Verdict.UNKNOWN -> UnknownAmber
     }
     val verdictLabel = entry.verdict.name.lowercase().replaceFirstChar { it.uppercase() }
-    val scoreText = entry.riskScorePercent?.let { "Risk score: ${it}%" } ?: "Risk score: not yet available"
+    // "%.1f" rounds the raw Double to one clean decimal place instead of
+    // exposing floating-point tails like 74.00999999999999.
+    val scoreText = entry.riskScorePercent?.let { "Risk score: ${"%.1f".format(it)}%" }
+        ?: "Risk score: not yet available"
 
     Scaffold(
         topBar = {

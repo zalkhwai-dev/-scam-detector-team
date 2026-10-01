@@ -55,7 +55,11 @@ fun ResultCard(result: ScanResult, modifier: Modifier = Modifier) {
             }
             Spacer(modifier = Modifier.height(8.dp))
 
-            val scoreText = result.riskScorePercent?.let { "Risk score: ${it}%" } ?: "Risk score: not yet available"
+            // riskScorePercent is a Double from model_score * 100, which can produce
+            // long floating-point tails (e.g. 74.00999999999999) due to binary
+            // decimal rounding - "%.1f" formats it to one clean decimal place.
+            val scoreText = result.riskScorePercent?.let { "Risk score: ${"%.1f".format(it)}%" }
+                ?: "Risk score: not yet available"
 
             Text(
                 text = scoreText,
