@@ -16,3 +16,4 @@ backend/**/venv/
 
 # Large model files - shared via README download link instead
 backend/model/final/
+backend/.env
