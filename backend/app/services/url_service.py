@@ -39,13 +39,21 @@ def check_url_safety(target_url: str) -> dict:
           ],
           "platformTypes": ["ANY_PLATFORM"],
           "threatEntryTypes": ["URL"],
-          "entries": [{"url": target_url}],
+          "threatEntries": [{"url": target_url}],
       },
   }
 
   try:
     response = requests.post(endpoint, json=body, timeout=5)
     result_data = response.json()
+
+    # If Google's API returned an error, don't treat it as "safe"
+    if "error" in result_data:
+      return {
+          "url": target_url,
+          "url_status": "unavailable",
+          "is_mock": False,
+      }
 
     # If Google detects a threat in the URL
     if "matches" in result_data and result_data["matches"]:
