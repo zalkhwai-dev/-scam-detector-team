@@ -40,10 +40,10 @@ import android.database.sqlite.SQLiteOpenHelper
  * as close to the original as possible so RealScanRepository.kt only needed
  * one small addition (passing measured processingTimeMs in), not a rewrite.
  *
- * STILL OPEN, not resolved here: `user_id` is left NULL on every scan -
- * it's unclear whether Nada's AuthViewModel writes to the `users` table at
- * all, or whether email/password here are meant to connect to it. Confirm
- * with Amnah and Nada before assuming a real link.
+ * user_id on `scans` is now connected: AuthViewModel uses emailExists(),
+ * createUser() and findPasswordHash() below to write to and check against
+ * the `users` table for real sign up / login (Senior I report's Use-Case 1
+ * and Use-Case 2), resolving what used to be an open question here.
  */
 class ScanHistoryDbHelper(context: Context) :
     SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
@@ -242,6 +242,36 @@ class ScanHistoryDbHelper(context: Context) :
             }
         }
         return rows
+    }
+
+    /** Returns true if an account with this email already exists. */
+    fun emailExists(email: String): Boolean {
+        val cursor = readableDatabase.rawQuery(
+            "SELECT $COL_USER_ID FROM $TABLE_USERS WHERE $COL_EMAIL = ? LIMIT 1",
+            arrayOf(email)
+        )
+        cursor.use { return it.moveToFirst() }
+    }
+
+    /** Creates a new user row. Returns the new user's id. */
+    fun createUser(fullName: String, email: String, passwordHash: String): Long {
+        val values = ContentValues().apply {
+            put(COL_FULL_NAME, fullName)
+            put(COL_EMAIL, email)
+            put(COL_PASSWORD_HASH, passwordHash)
+        }
+        return writableDatabase.insert(TABLE_USERS, null, values)
+    }
+
+    /** Returns the stored password hash for this email, or null if no such user. */
+    fun findPasswordHash(email: String): String? {
+        val cursor = readableDatabase.rawQuery(
+            "SELECT $COL_PASSWORD_HASH FROM $TABLE_USERS WHERE $COL_EMAIL = ? LIMIT 1",
+            arrayOf(email)
+        )
+        cursor.use {
+            return if (it.moveToFirst()) it.getString(0) else null
+        }
     }
 
     private fun Cursor.getStringOrNull(col: String): String? {
