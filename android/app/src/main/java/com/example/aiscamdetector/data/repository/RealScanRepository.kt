@@ -52,12 +52,13 @@ class RealScanRepository(context: Context) : ScanRepository {
      * IMPORTANT re: riskScorePercent - per docs/decisions.md, risk_score must
      * never be invented; it stays null until a documented method exists.
      * For messages, model_score is a real model confidence value, so it's
-     * used directly. For URLs, risk_score is currently always null (Amnah's
-     * real scoring isn't built yet), so there is no honest number to show.
-     * 0.0 here is a PLACEHOLDER ONLY because ScanResult.riskScorePercent is
-     * non-nullable - it is paired with an explicit note in `summary` so nothing
-     * implies a real score exists. Flag to Nada: this field may need to become
-     * Double? so "not yet scored" can be shown honestly instead.
+     * used directly. For URLs, there is no score at all, by design - Use-
+     * Case 3/4 in the Senior I report defines URL checking as a Google Safe
+     * Browsing threat-database lookup (Safe/Malicious/Unavailable), not a
+     * scored prediction. riskScorePercent is null for every URL scan, and
+     * the UI (ResultCard/HistoryScreen) only shows a "Risk score" line when
+     * this is non-null, so a message scan's real score still displays and a
+     * URL scan's absence of one is never described as "not yet available".
      */
     private fun toScanResult(response: ScanResponse, inputText: String): ScanResult {
         val verdict = when (response.scan_type) {
@@ -74,10 +75,6 @@ class RealScanRepository(context: Context) : ScanRepository {
             else -> Verdict.UNKNOWN
         }
 
-        // riskScorePercent is now Double? (per Nada's fix) - so we pass the
-        // real value when one exists, and real null when it doesn't. No more
-        // faking a 0.0 placeholder - per docs/decisions.md, an absent score
-        // must stay absent, not be invented.
         val riskScorePercent: Double? = when {
             response.model_score != null -> response.model_score * 100
             response.risk_score != null -> response.risk_score.toDouble()
@@ -90,12 +87,7 @@ class RealScanRepository(context: Context) : ScanRepository {
             } else null
         }
 
-        val summary = response.summary ?: if (response.scan_type == "url" && response.risk_score == null) {
-            "No numeric risk score available yet - result is based on a known-threat check only. " +
-                "A no-known-threat result is not a safety guarantee."
-        } else {
-            null
-        } ?: "No summary provided."
+        val summary = response.summary ?: urlSummary(response) ?: "No summary provided."
 
         // For a URL scan, the input itself is the detected URL. For a message
         // scan, no field in the contract carries this - the backend doesn't
@@ -120,5 +112,23 @@ class RealScanRepository(context: Context) : ScanRepository {
 
     companion object {
         private val urlPattern = Regex("""https?://\S+""")
+
+        /**
+         * Plain-language explanation of a URL verdict, matching Use-Case 3/4:
+         * the URL is checked against Google Safe Browsing's database of known
+         * malicious/phishing sites and comes back Safe, Malicious, or
+         * Unavailable - never a numeric score, so this never mentions one.
+         */
+        private fun urlSummary(response: ScanResponse): String? {
+            if (response.scan_type != "url") return null
+            return when (response.url_status) {
+                "no_known_threat" ->
+                    "This URL was checked against Google Safe Browsing's database of known malicious and phishing sites, and no match was found. This is not a guarantee of safety - always use your own judgment, especially with sensitive information."
+                "threat_match" ->
+                    "This URL matches a known malicious or phishing site in Google's Safe Browsing database. Avoid visiting it."
+                else ->
+                    "URL verification is currently unavailable. Please try again later."
+            }
+        }
     }
 }

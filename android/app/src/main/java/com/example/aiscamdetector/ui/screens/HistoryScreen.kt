@@ -146,11 +146,15 @@ private fun HistoryRow(entry: HistoryEntry, onClick: () -> Unit) {
             Text(text = entry.input, maxLines = 2, style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(8.dp))
             val verdictLabel = entry.verdict.name.lowercase().replaceFirstChar { it.uppercase() }
-            // "%.1f" rounds the raw Double to one clean decimal place instead of
-            // exposing floating-point tails like 74.00999999999999.
-            val scoreLabel = entry.riskScorePercent?.let { "${"%.1f".format(it)}%" } ?: "not yet scored"
+            // URL scans have no score to show (Safe Browsing is a threat-
+            // database match, not a scored prediction - see Use-Case 3/4),
+            // so the row just shows the verdict alone in that case, never
+            // a fake "not yet scored" suffix. "%.1f" rounds a real score to
+            // one clean decimal place when one does exist (message scans).
+            val label = entry.riskScorePercent?.let { "$verdictLabel - ${"%.1f".format(it)}%" }
+                ?: verdictLabel
             Text(
-                text = "$verdictLabel - $scoreLabel",
+                text = label,
                 color = color,
                 style = MaterialTheme.typography.labelLarge
             )
@@ -172,10 +176,6 @@ private fun ScanDetailsScreen(entry: HistoryEntry, onClose: () -> Unit) {
         Verdict.UNKNOWN -> UnknownAmber
     }
     val verdictLabel = entry.verdict.name.lowercase().replaceFirstChar { it.uppercase() }
-    // "%.1f" rounds the raw Double to one clean decimal place instead of
-    // exposing floating-point tails like 74.00999999999999.
-    val scoreText = entry.riskScorePercent?.let { "Risk score: ${"%.1f".format(it)}%" }
-        ?: "Risk score: not yet available"
 
     Scaffold(
         topBar = {
@@ -208,8 +208,17 @@ private fun ScanDetailsScreen(entry: HistoryEntry, onClose: () -> Unit) {
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(text = verdictLabel, style = MaterialTheme.typography.titleLarge, color = color)
-                    Spacer(Modifier.height(8.dp))
-                    Text(text = scoreText, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                    // Only message scans carry a real model score - see the
+                    // comment on ResultCard's identical check. No line is
+                    // shown here at all for a URL scan's result.
+                    entry.riskScorePercent?.let { score ->
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = "Risk score: ${"%.1f".format(score)}%",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray
+                        )
+                    }
                     Divider(modifier = Modifier.padding(vertical = 12.dp))
                     Text(
                         text = entry.input,

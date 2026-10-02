@@ -49,13 +49,31 @@ class RealHistoryRepository(context: Context) : HistoryRepository {
                 riskScore != null -> riskScore.toDouble()
                 else -> null
             },
-            summary = summary ?: if (scanType == "url" && riskScore == null) {
-                "No numeric risk score available yet - result is based on a known-threat check only."
-            } else {
-                "No summary provided."
-            },
+            summary = summary ?: urlSummary(scanType, urlStatus) ?: "No summary provided.",
             suspiciousPhrases = suspiciousPhrases,
             timestamp = dateFormat.format(Date(createdAt))
         )
+    }
+
+    companion object {
+        /**
+         * Plain-language explanation of a saved URL verdict, matching Use-
+         * Case 3/4: the URL was checked against Google Safe Browsing's
+         * database of known malicious/phishing sites and came back Safe,
+         * Malicious, or Unavailable - never a numeric score, so this never
+         * mentions one. Mirrors RealScanRepository's urlSummary() so a fresh
+         * scan and its saved History entry read identically.
+         */
+        private fun urlSummary(scanType: String, urlStatus: String?): String? {
+            if (scanType != "url") return null
+            return when (urlStatus) {
+                "no_known_threat" ->
+                    "This URL was checked against Google Safe Browsing's database of known malicious and phishing sites, and no match was found. This is not a guarantee of safety - always use your own judgment, especially with sensitive information."
+                "threat_match" ->
+                    "This URL matches a known malicious or phishing site in Google's Safe Browsing database. Avoid visiting it."
+                else ->
+                    "URL verification is currently unavailable. Please try again later."
+            }
+        }
     }
 }

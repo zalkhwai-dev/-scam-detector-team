@@ -55,17 +55,21 @@ fun ResultCard(result: ScanResult, modifier: Modifier = Modifier) {
             }
             Spacer(modifier = Modifier.height(8.dp))
 
-            // riskScorePercent is a Double from model_score * 100, which can produce
-            // long floating-point tails (e.g. 74.00999999999999) due to binary
-            // decimal rounding - "%.1f" formats it to one clean decimal place.
-            val scoreText = result.riskScorePercent?.let { "Risk score: ${"%.1f".format(it)}%" }
-                ?: "Risk score: not yet available"
-
-            Text(
-                text = scoreText,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray
-            )
+            // Only message scans carry a real model score - a URL scan is a
+            // Safe Browsing threat-database lookup (Safe/Malicious/
+            // Unavailable per Use-Case 3/4), not a scored prediction, so
+            // riskScorePercent is null for every URL result and no "Risk
+            // score" line is shown at all (never "not yet available", which
+            // wrongly implied a score was coming later). "%.1f" rounds the
+            // real score to one clean decimal place when it does exist.
+            result.riskScorePercent?.let { score ->
+                Text(
+                    text = "Risk score: ${"%.1f".format(score)}%",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+            }
             Divider(modifier = Modifier.padding(vertical = 12.dp))
             Text(text = result.summary, style = MaterialTheme.typography.bodyLarge)
 
