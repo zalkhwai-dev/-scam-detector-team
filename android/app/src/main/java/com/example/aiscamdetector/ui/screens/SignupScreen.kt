@@ -111,13 +111,5 @@ fun SignupScreen(
         TextButton(onClick = onNavigateToLogin) {
             Text("Already have an account? Log in", color = GreenPrimary)
         }
-        Spacer(Modifier.height(8.dp))
-        Text(
-            "Scaffold only: fields and validation are wired up, but no account " +
-                "is actually created yet.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color.Gray,
-            textAlign = TextAlign.Center
-        )
     }
 }
