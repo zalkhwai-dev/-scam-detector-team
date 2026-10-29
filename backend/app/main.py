@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 
 from app.services.url_service import check_url_safety
 
-from app.services.Ai import predict
+from app.services.Ai import predict, count_tokens, MAX_MODEL_TOKENS
 
 from app.schemas import (
     Response,
@@ -32,6 +32,23 @@ def health_check():  # to verify backend service availability.
 
 @app.post("/api/v1/analyze-message", response_model=AnalysisResult, tags=["Analysis"])
 def analyze_message(payload: MessageRequest):
+    # Characters are capped at 2000 in the schema; tokens are what the model
+    # actually limits. Reject anything over 512 tokens with a clear message
+    # instead of silently truncating it and judging only part of the text.
+    token_count = count_tokens(payload.text)
+    if token_count > MAX_MODEL_TOKENS:
+        return JSONResponse(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            content={
+                "error": {
+                    "code": 422,
+                    "message": (
+                        f"Message is too long for the AI model ({token_count} tokens, "
+                        f"maximum {MAX_MODEL_TOKENS}). Please shorten it and try again."
+                    ),
+                }
+            },
+        )
     return predict(payload.text)
 
 

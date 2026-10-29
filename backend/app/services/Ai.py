@@ -25,6 +25,14 @@ _classifier = pipeline(
     top_k=None,  # return scores for all 3 labels, not just the top one
 )
 
+MAX_MODEL_TOKENS = 512  # RoBERTa's hard input limit (including the 2 special start/end tokens)
+
+
+def count_tokens(text: str) -> int:
+    """Number of tokens the model would see for this text, before any truncation."""
+    return len(_tokenizer(text, truncation=False)["input_ids"])
+
+
 # Common scam-indicator phrases, checked case-insensitively against the message text
 _SUSPICIOUS_PATTERNS = [
     r"\burgent\b",

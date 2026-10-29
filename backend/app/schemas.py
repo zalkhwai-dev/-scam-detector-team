@@ -11,8 +11,8 @@ class MessageRequest(BaseModel):
     text: str = Field(
         ...,
         min_length=1,
-        max_length=512,
-        description="Message text cannot be empty and must not exceed 512 characters."
+        max_length=2000,
+        description="Message text cannot be empty and must not exceed 2000 characters (about 512 tokens, the model input limit)."
     )
 
 
