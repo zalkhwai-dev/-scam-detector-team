@@ -11,8 +11,8 @@ class MessageRequest(BaseModel):
     text: str = Field(
         ...,
         min_length=1,
-        max_length=2000,
-        description="Message text cannot be empty and must not exceed 2000 characters (about 512 tokens, the model input limit)."
+        max_length=10000,
+        description="Message text cannot be empty and must not exceed 10000 characters. The AI model separately limits input to 512 tokens, which is checked in main.py."
     )
 
 
