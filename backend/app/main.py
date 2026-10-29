@@ -74,17 +74,26 @@ def check_url(payload: URLRequest):
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     error = []
+    top_message = "Validation Error: Invalid input data provided."
     for err in exc.errors():
         field = err.get("loc", [])[-1]
         msg = err.get("msg")
         error.append({"field": field, "message": msg})
+        # Give a clear, specific message when a message is simply too long,
+        # since the app shows error.message to the user.
+        if err.get("type") == "string_too_long":
+            max_chars = err.get("ctx", {}).get("max_length", 10000)
+            top_message = (
+                f"Message is too long (maximum {max_chars} characters). "
+                "Please shorten it and try again."
+            )
 
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={
             "error": {
                 "code": 422,
-                "message": "Validation Error: Invalid input data provided.",
+                "message": top_message,
                 "details": error
             }
         }
