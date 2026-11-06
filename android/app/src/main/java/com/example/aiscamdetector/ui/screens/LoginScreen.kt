@@ -59,7 +59,7 @@ fun LoginScreen(
             Icon(Icons.Default.Check, contentDescription = null, tint = Color.White)
         }
         Spacer(Modifier.height(16.dp))
-        Text("AI-Based Scam Message and Suspicious Link Detection System", style = MaterialTheme.typography.titleLarge)
+        Text("AI-Based Scam Message and Suspicious Link Detection System", style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
         Text(
             "Stay safe from scam links and messages",
             style = MaterialTheme.typography.bodyMedium,
