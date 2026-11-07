@@ -44,11 +44,10 @@ class RealHistoryRepository(context: Context) : HistoryRepository {
             type = type,
             input = inputText,
             verdict = verdictEnum,
-            riskScorePercent = when {
-                modelScore != null -> modelScore * 100
-                riskScore != null -> riskScore.toDouble()
-                else -> null
-            },
+            // Only a message judged Scam has a risk score (see RealScanRepository).
+            riskScorePercent = if (scanType == "message" && verdictEnum == Verdict.SCAM && modelScore != null)
+                modelScore * 100
+            else null,
             summary = summary ?: urlSummary(scanType, urlStatus) ?: "No summary provided.",
             suspiciousPhrases = suspiciousPhrases,
             timestamp = dateFormat.format(Date(createdAt))

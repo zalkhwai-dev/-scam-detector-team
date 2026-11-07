@@ -75,11 +75,15 @@ class RealScanRepository(context: Context) : ScanRepository {
             else -> Verdict.UNKNOWN
         }
 
-        val riskScorePercent: Double? = when {
-            response.model_score != null -> response.model_score * 100
-            response.risk_score != null -> response.risk_score.toDouble()
-            else -> null
-        }
+        // A risk score is shown only for a message the model judged to be a scam.
+        // model_score is the model's confidence in its own verdict, so for a Scam
+        // it is the probability that the message is a scam (a real risk). For a
+        // Safe message it would be the confidence that it is safe, which is not a
+        // risk, so nothing is shown. URLs never have a score.
+        val riskScorePercent: Double? =
+            if (response.scan_type == "message" && verdict == Verdict.SCAM && response.model_score != null)
+                response.model_score * 100
+            else null
 
         val suspiciousPhrases = response.highlights.mapNotNull { h ->
             if (h.start in inputText.indices && h.end in (h.start + 1)..inputText.length) {
