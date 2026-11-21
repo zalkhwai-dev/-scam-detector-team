@@ -24,6 +24,7 @@ CREATE TABLE results (
     verdict TEXT,
     risk_score REAL,
     summary TEXT,
+    highlighted_phrases TEXT,
     FOREIGN KEY (scan_id) REFERENCES scans(id)
 );
 
